@@ -1,0 +1,70 @@
+name: CodSpeed Benchmarks
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ '**' ]
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC authentication with CodSpeed
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install minimal stable
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/master' }}
+    - name: Install Protoc
+      uses: ./.github/actions/setup-protoc
+    - name: Install mold
+      uses: rui314/setup-mold@7e4f20ad28a2e8ca6fd0892ccf72e2abb706b9c3 # v1
+    - name: Enable mold
+      run: |
+        mkdir -p .cargo
+        echo "[target.x86_64-unknown-linux-gnu]" >> .cargo/config.toml
+        echo "linker = \"clang\"" >> .cargo/config.toml
+        echo "rustflags = [\"-C\", \"link-arg=-fuse-ld=/usr/local/bin/mold\"]" >> .cargo/config.toml
+    - name: Install cargo-codspeed
+      uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # main
+      with:
+        tool: cargo-codspeed
+    - name: Build the benchmark targets
+      # Only CPU-bound benchmarks with small, self-contained fixtures are selected here.
+      # Benchmarks that download datasets or build large indexes (e.g. 1M-point HNSW graphs)
+      # are too slow to run under CPU simulation.
+      run: >-
+        cargo codspeed build -m simulation --locked
+        -p common -p quantization -p segment -p collection
+        --bench bitpacking
+        --bench fixed_length_priority_queue
+        --bench hw_counter
+        --bench encode
+        --bench binary
+        --bench p_square
+        --bench hadamard
+        --bench metrics
+        --bench serde_formats
+        --bench id_type_benchmark
+        --bench map_benchmark
+        --bench numeric_index_check_values
+        --bench boolean_filtering
+        --bench range_filtering
+        --bench hash_ring_bench
+    - name: Run the benchmarks
+      uses: CodSpeedHQ/action@c4fd08a3a159bd0cc208da1e0edf32b8c47d75e5 # v5.4.0
+      with:
+        mode: simulation
+        run: cargo codspeed run --workspace
