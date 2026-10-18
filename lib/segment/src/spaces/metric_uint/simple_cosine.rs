@@ -55,6 +55,9 @@ impl Metric<VectorElementTypeByte> for CosineMetric {
     }
 }
 
+/// Portable cosine similarity of two byte vectors, used when no SIMD kernel applies.
+///
+/// Returns `0.0` if either vector has zero norm.
 pub fn cosine_similarity_bytes(
     v1: &[VectorElementTypeByte],
     v2: &[VectorElementTypeByte],

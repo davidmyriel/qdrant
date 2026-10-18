@@ -55,6 +55,8 @@ impl Metric<VectorElementTypeByte> for EuclidMetric {
     }
 }
 
+/// Portable negated squared euclidean distance of two byte vectors,
+/// used when no SIMD kernel applies. Higher is more similar.
 pub fn euclid_similarity_bytes(
     v1: &[VectorElementTypeByte],
     v2: &[VectorElementTypeByte],
