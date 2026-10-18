@@ -1,10 +1,10 @@
 use common::types::ScoreType;
-use half::f16;
 
 use crate::data_types::vectors::{DenseVector, VectorElementTypeHalf};
 use crate::spaces::metric::Metric;
 #[cfg(target_arch = "x86_64")]
 use crate::spaces::metric_f16::avx::euclid::avx_euclid_similarity_half;
+use crate::spaces::metric_f16::lanewise_sum;
 #[cfg(all(target_arch = "aarch64", target_feature = "neon", not(windows)))]
 use crate::spaces::metric_f16::neon::euclid::neon_euclid_similarity_half;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -60,8 +60,5 @@ pub fn euclid_similarity_half(
     v1: &[VectorElementTypeHalf],
     v2: &[VectorElementTypeHalf],
 ) -> ScoreType {
-    -v1.iter()
-        .zip(v2)
-        .map(|(a, b)| (f16::to_f32(*a) - f16::to_f32(*b)).powi(2))
-        .sum::<f32>()
+    -lanewise_sum(v1, v2, |a, b| (a - b).powi(2))
 }
