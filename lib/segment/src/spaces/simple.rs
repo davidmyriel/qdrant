@@ -11,8 +11,10 @@ use super::tools::is_length_zero_or_normalized;
 use crate::data_types::vectors::{DenseVector, VectorElementType};
 use crate::types::Distance;
 
+/// Only switch to 256-bit AVX for vectors long enough to amortize the AVX frequency
+/// license transition; shorter vectors use SSE.
 #[cfg(target_arch = "x86_64")]
-pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
+pub(crate) const MIN_DIM_SIZE_AVX: usize = 2048;
 
 #[cfg(any(
     target_arch = "x86",
