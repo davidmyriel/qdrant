@@ -55,6 +55,8 @@ impl Metric<VectorElementTypeByte> for ManhattanMetric {
     }
 }
 
+/// Portable negated manhattan distance of two byte vectors,
+/// used when no SIMD kernel applies. Higher is more similar.
 pub fn manhattan_similarity_bytes(
     v1: &[VectorElementTypeByte],
     v2: &[VectorElementTypeByte],

@@ -55,15 +55,18 @@ impl Metric<VectorElementTypeByte> for DotProductMetric {
     }
 }
 
+/// Portable dot product of two byte vectors, used when no SIMD kernel applies.
+///
+/// Products are accumulated in `i32`, which cannot overflow for realistic dimensions.
 pub fn dot_similarity_bytes(
     v1: &[VectorElementTypeByte],
     v2: &[VectorElementTypeByte],
 ) -> ScoreType {
-    let mut dot_product = 0;
+    let mut sum = 0;
 
     for (a, b) in v1.iter().zip(v2) {
-        dot_product += i32::from(*a) * i32::from(*b);
+        sum += i32::from(*a) * i32::from(*b);
     }
 
-    dot_product as ScoreType
+    sum as ScoreType
 }
